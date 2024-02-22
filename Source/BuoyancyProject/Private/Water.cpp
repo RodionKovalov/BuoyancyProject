@@ -44,7 +44,7 @@ void AWater::OnComponentOverlap(UPrimitiveComponent* OverlappedComp, AActor* Oth
 	UBuoyancyComponent* buoyancyComponent = OtherActor->FindComponentByClass<UBuoyancyComponent>();
 	if (!buoyancyComponent) return;
 	OverlappedActors.Add(OtherActor);
-	buoyancyComponent->SetParam(true, this);
+	buoyancyComponent->SetParam(true);
 	StartRenderWaterAlpha();
 }
 
@@ -54,7 +54,7 @@ void AWater::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherA
 	if (buoyancyComponent)
 	{
 		OverlappedActors.Remove(OtherActor);
-		buoyancyComponent->SetParam(false, nullptr);
+		buoyancyComponent->SetParam(false);
 		TArray<AActor*> actors;
 		WaterMesh->GetOverlappingActors(actors);
 		if (actors.Num() <= 0)

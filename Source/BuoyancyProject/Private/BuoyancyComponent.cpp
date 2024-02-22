@@ -15,12 +15,11 @@ UBuoyancyComponent::UBuoyancyComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	Density = 100.f;
-	WaveFactorCoef = 1.f;
-	MinWaveFactorCoef = 0.8f;
-	MaxWaveFactorCoef = 2.f;
 	FormDragCoefficient = 0.1f;
 	bInWater = false;
 	bShowDebugLines = false;
+	WaterDensity = 977.f;
+
 	// ...
 }
 
@@ -35,9 +34,10 @@ void UBuoyancyComponent::BeginPlay()
 }
 
 // Called every frame
-void UBuoyancyComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UBuoyancyComponent::TickComponent(float deltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Super::TickComponent(deltaTime, TickType, ThisTickFunction);
+	this->DeltaTime = deltaTime;
 	if (bInWater)
 	{
 		for (auto pontoon : Pontoons)
@@ -53,40 +53,30 @@ void UBuoyancyComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 			float volume;
 			float volumeInWater;
 			float volumeInWaterAlpha;
-			float waveFactor = 1.f;
 			FVector linearVelocity;
 			FVector linearVelocity_normalize;
 			FCollisionQueryParams params;
 			params.AddIgnoredActor(GetOwner());
-			FCollisionQueryParams paramsComplexTrace;
-			paramsComplexTrace.AddIgnoredActor(GetOwner());
-			paramsComplexTrace.bTraceComplex = true;
-			paramsComplexTrace.bReturnFaceIndex = true;
-			if (Mesh && Water)
+			if (Mesh)
 			{
 				worldPontoonLocation = Mesh->GetComponentTransform().TransformPosition(pontoon.RelativeLocation);
 				startLocation = worldPontoonLocation;
 				endLocation = worldPontoonLocation;
-				startLocation.Z = startLocation.Z + pontoon.Radius;
-				endLocation.Z = endLocation.Z - pontoon.Radius;
+				startLocation.Z = (startLocation.Z + pontoon.Radius);
+				endLocation.Z = (endLocation.Z - pontoon.Radius);
 				hitResult = CalculateLineTrace(startLocation, endLocation, params);
 				volume = CalculateVolume(Mesh->GetMass(), Density);
 				volumeInWaterAlpha = CalctulateAlphaVolumeInWater(hitResult.Distance, pontoon.Radius);
 				volumeInWater = CalculateVolumeInWater(volumeInWaterAlpha, volume);
-				CalculateArchimedesForce(archimedesForce, volumeInWater, Water->WaterDensity, Pontoons.Num());
+				CalculateArchimedesForce(archimedesForce, volumeInWater, WaterDensity, Pontoons.Num());
 				// Calculating force location for ViscousFrictionForce
 				forceLocation = CalculateForceLocation(Mesh->GetComponentTransform().TransformPosition(pontoon.RelativeLocation), pontoon.Radius, volumeInWaterAlpha);
 				linearVelocity = Mesh->GetPhysicsLinearVelocityAtPoint(forceLocation);
-				CalculateViscousFriction(viscousFriction, linearVelocity, Water->WaterDensity, volumeInWater, FormDragCoefficient, Pontoons.Num());
+				CalculateViscousFriction(viscousFriction, linearVelocity, WaterDensity, volumeInWater, FormDragCoefficient, Pontoons.Num());
 				// Viscous friction force acts tangentially on an object
 				linearVelocity_normalize = linearVelocity;
 				linearVelocity_normalize.Normalize();
 				Mesh->AddForceAtLocation(viscousFriction * -linearVelocity_normalize, forceLocation);
-				hitResultComplexTrace = CalculateLineTrace(startLocation, endLocation, paramsComplexTrace);
-				waveFactor = CalculateWaveFactor(hitResultComplexTrace, Water->GetWaterTextureRT(), WaveFactorCoef, MinWaveFactorCoef, MaxWaveFactorCoef);
-
-				// Accounting for wave movement
-				archimedesForce *= waveFactor;
 				// Archimedes' force acts on the bottom of the object
 				Mesh->AddForceAtLocation(archimedesForce * hitResult.Normal, endLocation);
 			}
@@ -101,7 +91,7 @@ float UBuoyancyComponent::CalctulateAlphaVolumeInWater(const float& distance, co
 
 float UBuoyancyComponent::CalculateVolume(const float& mass, const float& density)
 {
-	return  mass / density;
+	return mass / density;
 }
 float UBuoyancyComponent::CalculateVolumeInWater(const float& alphaVolumeInWater, const float& volume)
 {
@@ -123,10 +113,9 @@ void UBuoyancyComponent::CalculateViscousFriction(float& outViscousFriction, con
 	outViscousFriction = viscousFriction;
 }
 
-void UBuoyancyComponent::SetParam(const bool& _bInWater, AWater* _water)
+void UBuoyancyComponent::SetParam(const bool& _bInWater)
 {
 	bInWater = _bInWater;
-	Water = _water;
 }
 
 bool UBuoyancyComponent::InWater()
@@ -139,22 +128,8 @@ FHitResult UBuoyancyComponent::CalculateLineTrace(FVector& startLocation, FVecto
 	FHitResult hitResult;
 	GetWorld()->LineTraceSingleByChannel(hitResult, startLocation, endLocation, ECollisionChannel::ECC_Visibility, params);
 	if (bShowDebugLines)
-		DrawDebugLine(GetWorld(), startLocation, endLocation, FColor::Blue, false, 2, -1, 5);
+		DrawDebugLine(GetWorld(), startLocation, endLocation, FColor::Blue, false, 0.f, -1, 5);
 	return hitResult;
-}
-float UBuoyancyComponent::CalculateWaveFactor(const FHitResult& hitResult, UTextureRenderTarget2D* textureRT, const float& waveFactorCoef, const float& minWaveFactorCoef, const float& maxWaveFactorCoef)
-{
-	if (!textureRT && !GetWorld()) return 1.f;
-	FVector2D UV = FVector2D::ZeroVector;
-	FLinearColor color = FLinearColor::Black;
-	float waveFactor = 0.0f;
-	FVector colorVector = FVector::ZeroVector;
-	UGameplayStatics::FindCollisionUV(hitResult, 1, UV);
-	color = Water->GetRenderTargetValue(UV.X, UV.Y, textureRT);//UKismetRenderingLibrary::ReadRenderTargetRawUV(GetWorld(), textureRT, UV.X, UV.Y);
-	colorVector = UKismetMathLibrary::Conv_LinearColorToVector(color);
-	waveFactor = waveFactorCoef * colorVector.Size();
-	waveFactor = UKismetMathLibrary::FClamp(waveFactor, minWaveFactorCoef, maxWaveFactorCoef);
-	return waveFactor;
 }
 void UBuoyancyComponent::CalculateArchimedesForce(float& outArchimedesForce, const float& volumeInWater, const float& waterDensity, const int& pontoonsQuantity)
 {

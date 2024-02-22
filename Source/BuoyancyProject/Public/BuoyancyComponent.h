@@ -10,7 +10,6 @@
 
 class UTextureRenderTarget2D;
 class UStaticMeshComponent;
-class AWater;
 
 USTRUCT(BlueprintType)
 struct FPontoonStruct
@@ -29,9 +28,9 @@ class BUOYANCYPROJECT_API UBuoyancyComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float deltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	UBuoyancyComponent();
-	void SetParam(const bool& _bInWater, AWater* _water);
+	void SetParam(const bool& _bInWater);
 	bool InWater();
 protected:
 	virtual void BeginPlay() override;
@@ -45,7 +44,6 @@ protected:
 	// Calculating force location for ViscousFrictionForce
 	FVector CalculateForceLocation(const FVector& location, const float& radius, const float& alphaVolumeInWater);
 	void CalculateViscousFriction(float& outViscousFriction, const FVector& velocity, const float& waterDensity, const float& volumeInWater, const float& formDragCoefficient, const int& pontoonsQuantity);
-	float CalculateWaveFactor(const FHitResult& hitResult, UTextureRenderTarget2D* textureRT, const float& waveFactorCoef, const float& minWaveFactorCoef, const float& maxWaveFactorCoef);
 public:
 	UPROPERTY(EditAnywhere)
 	TArray<FPontoonStruct> Pontoons;
@@ -53,17 +51,13 @@ public:
 	float Density;
 	UPROPERTY(EditAnywhere)
 	float FormDragCoefficient;
-	UPROPERTY(EditAnywhere, Category = "WaterFactor")
-	float WaveFactorCoef;
-	UPROPERTY(EditAnywhere, Category = "WaterFactor")
-	float MinWaveFactorCoef;
-	UPROPERTY(EditAnywhere, Category = "WaterFactor")
-	float MaxWaveFactorCoef;
+	UPROPERTY(EditAnywhere)
+	float WaterDensity;
 	UPROPERTY(EditAnywhere)
 	bool bShowDebugLines;
 protected:
-	AWater* Water;
 	bool bInWater;
 	UStaticMeshComponent* Mesh;
+	float DeltaTime;
 
 };
