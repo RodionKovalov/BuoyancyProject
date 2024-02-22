@@ -1,3 +1,3 @@
 # BuoyancyProject
-![](https://github.com/RodionKovalov/BuoyancyProject/Photos/1.gif)
+<img src="https://github.com/RodionKovalov/BuoyancyProject/Photos/1.gif" width="300">
 ## Overview:
