@@ -11,3 +11,7 @@ A component is embedded in the actor. The forces acting on the object act on cer
   <img src="/Photos/BuoyancySettings.png"/>
   <img src="/Photos/BuoyancyPontoons.png"/>
 </div>
+In the Water Actor, you can adjust the number of squares (two polygons), the surface area of the water, and the movement of the waves. The water surface is divided into sectors containing a certain number of polygons. The number of squares (two polygons) must always be greater than zero and even. Sphere radius and tolerance adjust the rendering of water, as I mentioned before it is still in development.
+<div id="header" align="center">
+  <img src="/Photos/WaterSettings.png"/>
+</div>
