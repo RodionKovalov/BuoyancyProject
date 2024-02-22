@@ -4,4 +4,5 @@
 ## Overview:
 The project implements basic realistic movement of the water surface with simulation of physical forces acting on objects in water, with convenient property settings. Developed on Unreal Engine 4.27.
 At first, I decided to simulate the water surface using RenderTarget, but I came to the conclusion that it was too slow. Finding a pixel and processing its color takes too slowly, which is why the boat responded to the surface late, so I decided to do a full-fledged collision generation. Water surface simulation is based on UProceduralMeshComponent.
+But now I’m faced with another problem: **the procedural mesh doesn’t support LOD**, so I had to implement my own system, but it’s still in development.
 ## Adjustment:
