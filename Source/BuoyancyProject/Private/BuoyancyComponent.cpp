@@ -113,7 +113,7 @@ void UBuoyancyComponent::CalculateViscousFriction(float& outViscousFriction, con
 	outViscousFriction = viscousFriction;
 }
 
-void UBuoyancyComponent::SetParam(const bool& _bInWater)
+void UBuoyancyComponent::SetParam(bool _bInWater)
 {
 	bInWater = _bInWater;
 }

@@ -30,7 +30,7 @@ class BUOYANCYPROJECT_API UBuoyancyComponent : public UActorComponent
 public:
 	virtual void TickComponent(float deltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	UBuoyancyComponent();
-	void SetParam(const bool& _bInWater);
+	void SetParam(bool _bInWater);
 	bool InWater();
 protected:
 	virtual void BeginPlay() override;
