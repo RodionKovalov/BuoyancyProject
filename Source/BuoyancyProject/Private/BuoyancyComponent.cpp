@@ -1,11 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Engine/TextureRenderTarget2D.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
-#include "Water.h"
 #include "BuoyancyComponent.h"
 
 // Sets default values for this component's properties
@@ -28,8 +26,20 @@ UBuoyancyComponent::UBuoyancyComponent()
 void UBuoyancyComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Mesh = Cast<UStaticMeshComponent>(GetOwner()->GetRootComponent());
-	// ...
+	if (GetOwner())
+	{
+		Mesh = Cast<UStaticMeshComponent>(GetOwner()->GetRootComponent());
+		TArray<UActorComponent* > components;
+		components = GetOwner()->GetComponentsByClass(UPontoon::StaticClass());
+		for (auto component : components)
+		{
+			UPontoon* pontoon = Cast<UPontoon>(component);
+			if (pontoon)
+			{
+				Pontoons.Add(pontoon);
+			}
+		}
+	}
 
 }
 
@@ -59,18 +69,18 @@ void UBuoyancyComponent::TickComponent(float deltaTime, ELevelTick TickType, FAc
 			params.AddIgnoredActor(GetOwner());
 			if (Mesh)
 			{
-				worldPontoonLocation = Mesh->GetComponentTransform().TransformPosition(pontoon.RelativeLocation);
+				worldPontoonLocation = Mesh->GetComponentTransform().TransformPosition(pontoon->GetRelativeLocation());
 				startLocation = worldPontoonLocation;
 				endLocation = worldPontoonLocation;
-				startLocation.Z = (startLocation.Z + pontoon.Radius);
-				endLocation.Z = (endLocation.Z - pontoon.Radius);
+				startLocation.Z = (startLocation.Z + pontoon->Radius);
+				endLocation.Z = (endLocation.Z - pontoon->Radius);
 				hitResult = CalculateLineTrace(startLocation, endLocation, params);
 				volume = CalculateVolume(Mesh->GetMass(), Density);
-				volumeInWaterAlpha = CalctulateAlphaVolumeInWater(hitResult.Distance, pontoon.Radius);
+				volumeInWaterAlpha = CalctulateAlphaVolumeInWater(hitResult.Distance, pontoon->Radius);
 				volumeInWater = CalculateVolumeInWater(volumeInWaterAlpha, volume);
 				CalculateArchimedesForce(archimedesForce, volumeInWater, WaterDensity, Pontoons.Num());
 				// Calculating force location for ViscousFrictionForce
-				forceLocation = CalculateForceLocation(Mesh->GetComponentTransform().TransformPosition(pontoon.RelativeLocation), pontoon.Radius, volumeInWaterAlpha);
+				forceLocation = CalculateForceLocation(Mesh->GetComponentTransform().TransformPosition(pontoon->GetRelativeLocation()), pontoon->Radius, volumeInWaterAlpha);
 				linearVelocity = Mesh->GetPhysicsLinearVelocityAtPoint(forceLocation);
 				CalculateViscousFriction(viscousFriction, linearVelocity, WaterDensity, volumeInWater, FormDragCoefficient, Pontoons.Num());
 				// Viscous friction force acts tangentially on an object

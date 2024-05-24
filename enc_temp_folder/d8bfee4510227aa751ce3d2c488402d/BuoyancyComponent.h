@@ -36,6 +36,8 @@ protected:
 	void CalculateViscousFriction(float& outViscousFriction, const FVector& velocity, const float& waterDensity, const float& volumeInWater, const float& formDragCoefficient, const int& pontoonsQuantity);
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buoyancy")
+	TArray<UPontoon*> Pontoons;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buoyancy")
 	float Density;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buoyancy")
 	float FormDragCoefficient;
@@ -47,6 +49,5 @@ protected:
 	bool bInWater;
 	UStaticMeshComponent* Mesh;
 	float DeltaTime;
-	TArray<UPontoon*> Pontoons;
 
 };
